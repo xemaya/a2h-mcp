@@ -56,4 +56,38 @@ export class A2hApiClient {
         : parsed;
     return data as { messageId: string; sentAt: string };
   }
+
+  /**
+   * GET /api/v1/agent/events/pull — sandbox-friendly pull (no long connection).
+   * Drains up to `limit` events from the server-side offline queue and returns
+   * them. Used by `check_inbox` tool which MaxClaw / similar cron-capable agent
+   * hosts call on a schedule.
+   */
+  async pullEvents(
+    limit: number = 50,
+  ): Promise<{ events: unknown[]; hasMore: boolean; count: number }> {
+    const capped = Math.max(1, Math.min(limit, 100));
+    const url = `${this.base}/api/v1/agent/events/pull?limit=${capped}`;
+    const { statusCode, body } = await request(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${this.token}` },
+      headersTimeout: 10_000,
+      bodyTimeout: 10_000,
+    });
+    const text = await body.text();
+    if (statusCode < 200 || statusCode >= 300) {
+      throw new Error(`pullEvents failed ${statusCode}: ${text}`);
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error(`pullEvents invalid JSON: ${text}`);
+    }
+    const data =
+      parsed && typeof parsed === "object" && "data" in parsed
+        ? (parsed as { data: unknown }).data
+        : parsed;
+    return data as { events: unknown[]; hasMore: boolean; count: number };
+  }
 }

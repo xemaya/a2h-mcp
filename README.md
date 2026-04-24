@@ -82,14 +82,32 @@ prefix).
 
 | Tool | Purpose |
 | --- | --- |
-| `send_message_to_ai` | Send a user message. Reply lands asynchronously as `notifications/a2h/event`. |
+| `send_message_to_ai` | Send a user message. Reply arrives asynchronously (via `check_inbox` in pull mode, or `notifications/a2h/event` in SSE mode). |
+| `check_inbox`        | **Pull all pending AI messages** (sandbox friendly, call from cron every 60s). Returns `{events, hasMore, count}`. |
 | `get_user_info`      | Return the bound `agentId` / tokenName / createdAt.                           |
 | `login`              | Only when unauthenticated: nudges the user to run `a2h-mcp-login`.             |
 
-Extra messages pushed by concierge (AI replies, system notifications) are
-forwarded to the MCP host via `notifications/a2h/event`. (MCP's built-in
-`notifications/message` is reserved for server logging under 2024-11-05 spec,
-so we use a custom method to avoid strict-host payload drops.)
+## Delivery modes
+
+Two modes, picked by env:
+
+- **Pull mode (default)** — sandbox friendly. No long connection. Host (e.g. MaxClaw) is expected to call `check_inbox` on a cron schedule (~60s) to drain pending AI messages. This is the **recommended default** because sandbox platforms kill idle processes and proxy-kill SSE connections.
+
+- **SSE mode** (`A2H_SSE_MODE=1`) — for long-lived hosts like Claude Code / Cursor where the MCP process stays alive. Opens a persistent SSE subscription to concierge and forwards events as MCP `notifications/a2h/event` in real time. (MCP's built-in `notifications/message` is reserved for logging under 2024-11-05, so we use a custom method.)
+
+Example MaxClaw `mcporter` config (pull mode):
+
+```json
+{
+  "command": "npx",
+  "args": ["-y", "@a2hmarket/a2h-mcp"],
+  "env": {
+    "A2H_API_BASE": "https://api-staging.a2hmarket.ai/a2hmarket-concierge"
+  }
+}
+```
+
+Then configure MaxClaw cron: every 1 min, call `a2h.check_inbox`, post the returned `events` to the chat UI.
 
 ## Architecture
 
