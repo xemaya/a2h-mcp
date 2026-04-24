@@ -7,11 +7,14 @@ import {
   credPath,
   loadCredentials,
   resolveApiBase,
+  resolveUrls,
 } from "../src/config.js";
 
 let tmp: string;
 let originalArgv: string[];
 let originalEnvBase: string | undefined;
+let originalEnvUser: string | undefined;
+let originalEnvFront: string | undefined;
 let originalHome: string | undefined;
 
 beforeEach(() => {
@@ -19,8 +22,12 @@ beforeEach(() => {
   process.env.A2H_HOME = tmp;
   originalArgv = process.argv;
   originalEnvBase = process.env.A2H_API_BASE;
+  originalEnvUser = process.env.A2H_USER_BASE;
+  originalEnvFront = process.env.A2H_FRONT_BASE;
   originalHome = process.env.A2H_HOME;
   delete process.env.A2H_API_BASE;
+  delete process.env.A2H_USER_BASE;
+  delete process.env.A2H_FRONT_BASE;
   process.argv = ["node", "test"];
 });
 
@@ -31,6 +38,16 @@ afterEach(() => {
     delete process.env.A2H_API_BASE;
   } else {
     process.env.A2H_API_BASE = originalEnvBase;
+  }
+  if (originalEnvUser === undefined) {
+    delete process.env.A2H_USER_BASE;
+  } else {
+    process.env.A2H_USER_BASE = originalEnvUser;
+  }
+  if (originalEnvFront === undefined) {
+    delete process.env.A2H_FRONT_BASE;
+  } else {
+    process.env.A2H_FRONT_BASE = originalEnvFront;
   }
   if (originalHome === undefined) {
     delete process.env.A2H_HOME;
@@ -92,5 +109,44 @@ describe("config.resolveApiBase", () => {
     expect(resolveApiBase()).toBe(
       "http://localhost:8821/a2hmarket-concierge",
     );
+  });
+});
+
+describe("config.resolveUrls", () => {
+  it("prod defaults: concierge + findu-user + a2hmarket.ai front", () => {
+    const urls = resolveUrls();
+    expect(urls.apiBase).toBe("https://api.a2hmarket.ai/a2hmarket-concierge");
+    expect(urls.userBase).toBe("https://api.a2hmarket.ai/findu-user");
+    expect(urls.frontBase).toBe("https://a2hmarket.ai");
+  });
+
+  it("staging (--staging flag): derives demo.a2hmarket.ai as frontBase", () => {
+    process.argv = ["node", "test", "--staging"];
+    const urls = resolveUrls();
+    expect(urls.apiBase).toBe(
+      "https://api-staging.a2hmarket.ai/a2hmarket-concierge",
+    );
+    expect(urls.userBase).toBe(
+      "https://api-staging.a2hmarket.ai/findu-user",
+    );
+    // Staging frontend is demo.a2hmarket.ai (findu-docs/testing/staging-api-test.md).
+    expect(urls.frontBase).toBe("https://demo.a2hmarket.ai");
+  });
+
+  it("explicit env overrides: each URL independently overridable", () => {
+    process.env.A2H_API_BASE = "http://localhost:8821/a2hmarket-concierge";
+    process.env.A2H_USER_BASE = "http://localhost:8802/findu-user/";
+    process.env.A2H_FRONT_BASE = "http://localhost:5173/";
+    const urls = resolveUrls();
+    expect(urls.apiBase).toBe("http://localhost:8821/a2hmarket-concierge");
+    expect(urls.userBase).toBe("http://localhost:8802/findu-user");
+    expect(urls.frontBase).toBe("http://localhost:5173");
+  });
+
+  it("only A2H_API_BASE set (localhost): derives userBase by path swap, front → localhost:5173", () => {
+    process.env.A2H_API_BASE = "http://localhost:8821/a2hmarket-concierge";
+    const urls = resolveUrls();
+    expect(urls.userBase).toBe("http://localhost:8821/findu-user");
+    expect(urls.frontBase).toBe("http://localhost:5173");
   });
 });

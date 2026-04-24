@@ -31,30 +31,52 @@ account:
 npx -y @a2hmarket/a2h-mcp-login
 ```
 
-This runs the OAuth **Device Authorization Grant** flow:
+This runs the **AuthCode** flow (shared with the existing Openclaw / A2H
+skill authorization page):
 
-1. Prints a URL (`https://a2hmarket.ai/bind/skill?code=BIND-xxx&hostname=...`)
-2. Opens it in your default browser
-3. Polls concierge until the code is confirmed
-4. Writes `~/.a2h/credentials.json` (0600), containing the PAT + agentId
+1. Generates a local code `SKILL-<hex>`
+2. Opens `https://a2hmarket.ai/authcode?code=SKILL-...` in your default browser
+3. You log in to A2H Market (if not already) and click **Confirm authorize** —
+   the front-end calls `PUT /findu-user/api/v1/user/agent/auth?code=...`
+   on your behalf
+4. The CLI polls `GET /findu-user/api/v1/public/user/agent/auth?code=...`
+   every 5s and, as soon as it sees a `patToken`, writes
+   `~/.a2h/credentials.json` (0600) — 180-day PAT + agentId
 
-Restart the MCP host (Claude Code / Openclaw) afterwards so it re-initializes
-the server with credentials.
+> The `/authcode` page is the same page Openclaw and the A2H skill use for
+> agent authorization. One confirmation issues one PAT; subsequent MCP
+> requests are authenticated with that PAT only.
+
+Restart the MCP host (Claude Code / Openclaw / Hermes) afterwards so it
+re-initializes the server with credentials.
 
 ## Staging / local
 
-Two knobs — `--staging` CLI flag or `A2H_API_BASE` env var:
+Three URL knobs (each CLI flag or env var — flags take precedence, envs
+override flags):
+
+| Variable            | Default (prod)                                     | Default (staging)                                |
+| ------------------- | -------------------------------------------------- | ------------------------------------------------ |
+| `A2H_API_BASE`      | `https://api.a2hmarket.ai/a2hmarket-concierge`     | `https://api-staging.a2hmarket.ai/a2hmarket-concierge` |
+| `A2H_USER_BASE`     | derived → `https://api.a2hmarket.ai/findu-user`    | derived → `https://api-staging.a2hmarket.ai/findu-user` |
+| `A2H_FRONT_BASE`    | derived → `https://a2hmarket.ai`                   | derived → `https://demo.a2hmarket.ai` *(staging CloudFront)* |
 
 ```bash
 # Staging
 npx -y @a2hmarket/a2h-mcp --staging
 npx -y @a2hmarket/a2h-mcp-login --staging
 
-# Fully custom (e.g. local concierge)
-A2H_API_BASE=http://localhost:8821/a2hmarket-concierge npx -y @a2hmarket/a2h-mcp
+# Fully custom (e.g. local concierge + local findu-user + local vite)
+A2H_API_BASE=http://localhost:8821/a2hmarket-concierge \
+A2H_USER_BASE=http://localhost:8802/findu-user \
+A2H_FRONT_BASE=http://localhost:5173 \
+  npx -y @a2hmarket/a2h-mcp-login
 ```
 
-`A2H_API_BASE` takes precedence over `--staging`.
+Env vars take precedence over `--staging`. `A2H_USER_BASE` and
+`A2H_FRONT_BASE` default to values *derived* from `A2H_API_BASE` (same host,
+path swapped to `/findu-user`; host stripped of `api.` / `api-staging.`
+prefix).
 
 ## Tools exposed
 
