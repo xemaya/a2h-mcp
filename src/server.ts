@@ -95,11 +95,15 @@ function registerAuthenticated(
     throw new Error(`Unknown tool: ${name}`);
   });
 
-  // SSE bridge → MCP notifications/message
+  // SSE bridge → MCP notifications/a2h/event
+  // NOTE: MCP 2024-11-05 reserves `notifications/message` for the server→client
+  // logging channel with a strict `{level, logger?, data}` shape; strict hosts
+  // drop non-conforming payloads. Use a custom method so unknown hosts just
+  // ignore it instead of silently dropping on schema mismatch.
   const events = new EventStreamClient(apiBase, creds.token);
   events.on("message", (payload) => {
     void server.notification({
-      method: "notifications/message",
+      method: "notifications/a2h/event",
       params: payload as Record<string, unknown>,
     });
   });

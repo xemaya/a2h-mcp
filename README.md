@@ -60,12 +60,14 @@ A2H_API_BASE=http://localhost:8821/a2hmarket-concierge npx -y @a2hmarket/a2h-mcp
 
 | Tool | Purpose |
 | --- | --- |
-| `send_message_to_ai` | Send a user message. Reply lands asynchronously as `notifications/message`. |
+| `send_message_to_ai` | Send a user message. Reply lands asynchronously as `notifications/a2h/event`. |
 | `get_user_info`      | Return the bound `agentId` / tokenName / createdAt.                           |
 | `login`              | Only when unauthenticated: nudges the user to run `a2h-mcp-login`.             |
 
 Extra messages pushed by concierge (AI replies, system notifications) are
-forwarded to the MCP host via `notifications/message`.
+forwarded to the MCP host via `notifications/a2h/event`. (MCP's built-in
+`notifications/message` is reserved for server logging under 2024-11-05 spec,
+so we use a custom method to avoid strict-host payload drops.)
 
 ## Architecture
 

@@ -54,6 +54,12 @@ export async function main(): Promise<void> {
   } catch {
     // headless / no browser; user will copy-paste
   }
+  // Even when `open` resolves successfully, some environments (SSH / headless
+  // servers / WSL without browser integration) don't actually pop a window.
+  // Print an explicit hint so the user knows to copy the URL above.
+  process.stderr.write(
+    `(If your browser didn't open, copy the URL above.)\n\n`,
+  );
 
   const pollEveryMs = 5000;
   const maxAttempts = 60; // 5 minutes

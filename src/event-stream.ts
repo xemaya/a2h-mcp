@@ -34,15 +34,21 @@ export class EventStreamClient extends EventEmitter {
 
   private async loop(): Promise<void> {
     while (!this.stopped) {
+      const connectStart = Date.now();
       try {
         await this.connectOnce();
-        // clean close → reset backoff
-        this.backoffMs = 1000;
       } catch (err) {
         this.emit("error", err);
       }
       if (this.stopped) {
         return;
+      }
+      // Only reset backoff if the connection stayed alive for a meaningful
+      // window. Otherwise a fast-flapping server (immediate clean close or
+      // instant handshake failure) would make us busy-spin reconnecting.
+      const ranForMs = Date.now() - connectStart;
+      if (ranForMs > 10_000) {
+        this.backoffMs = 1000;
       }
       const delay = this.backoffMs;
       this.backoffMs = Math.min(this.backoffMs * 2, this.maxBackoffMs);
@@ -60,6 +66,11 @@ export class EventStreamClient extends EventEmitter {
         Accept: "text/event-stream",
       },
       signal: this.abortController.signal,
+      // SSE is a long-lived stream: don't let undici's default 300s body
+      // timeout kill it; keep a short handshake timeout so a hung TLS
+      // negotiation doesn't block reconnect forever.
+      bodyTimeout: 0,
+      headersTimeout: 10_000,
     });
     if (statusCode !== 200) {
       const text = await body.text();

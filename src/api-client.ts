@@ -34,6 +34,10 @@ export class A2hApiClient {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ content, attachments }),
+      // undici defaults to a 300s body timeout which is absurdly long for a
+      // user-facing send. Bound both the handshake and body read explicitly.
+      headersTimeout: 10_000,
+      bodyTimeout: 30_000,
     });
     const text = await body.text();
     if (statusCode < 200 || statusCode >= 300) {
