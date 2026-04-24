@@ -1,0 +1,48 @@
+{
+  "name": "@xemaya/a2h-mcp",
+  "version": "0.1.0",
+  "description": "Local MCP server for A2H Market AI assistant",
+  "type": "module",
+  "bin": {
+    "a2h-mcp": "./bin/a2h-mcp.js",
+    "a2h-mcp-login": "./bin/a2h-mcp-login.js"
+  },
+  "files": [
+    "dist/**",
+    "bin/**",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "undici": "^6.0.0",
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0",
+    "vitest": "^2.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm run test",
+    "clean": "rm -rf dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xemaya/a2h-mcp.git"
+  },
+  "keywords": [
+    "mcp",
+    "a2hmarket",
+    "claude-code",
+    "ai-assistant"
+  ],
+  "author": "xemaya",
+  "license": "MIT"
+}
