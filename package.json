@@ -1,5 +1,5 @@
 {
-  "name": "@xemaya/a2h-mcp",
+  "name": "@a2hmarket/a2h-mcp",
   "version": "0.1.0",
   "description": "Local MCP server for A2H Market AI assistant",
   "type": "module",

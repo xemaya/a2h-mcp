@@ -1,4 +1,4 @@
-# @xemaya/a2h-mcp
+# @a2hmarket/a2h-mcp
 
 Local MCP server that bridges Claude Code / Openclaw / Hermes to the
 **A2H Market AI assistant**.
@@ -16,7 +16,7 @@ Add one block to your MCP host config — e.g. Claude Code's `.mcp.json`:
   "mcpServers": {
     "a2h": {
       "command": "npx",
-      "args": ["-y", "@xemaya/a2h-mcp"]
+      "args": ["-y", "@a2hmarket/a2h-mcp"]
     }
   }
 }
@@ -28,7 +28,7 @@ Before the tools become usable you have to bind this machine to your A2H
 account:
 
 ```bash
-npx -y @xemaya/a2h-mcp-login
+npx -y @a2hmarket/a2h-mcp-login
 ```
 
 This runs the OAuth **Device Authorization Grant** flow:
@@ -47,11 +47,11 @@ Two knobs — `--staging` CLI flag or `A2H_API_BASE` env var:
 
 ```bash
 # Staging
-npx -y @xemaya/a2h-mcp --staging
-npx -y @xemaya/a2h-mcp-login --staging
+npx -y @a2hmarket/a2h-mcp --staging
+npx -y @a2hmarket/a2h-mcp-login --staging
 
 # Fully custom (e.g. local concierge)
-A2H_API_BASE=http://localhost:8821/a2hmarket-concierge npx -y @xemaya/a2h-mcp
+A2H_API_BASE=http://localhost:8821/a2hmarket-concierge npx -y @a2hmarket/a2h-mcp
 ```
 
 `A2H_API_BASE` takes precedence over `--staging`.
@@ -76,7 +76,7 @@ forwarded to the MCP host via `notifications/message`.
                │ stdio JSON-RPC (MCP)
                ▼
 ┌──────────────────────────────────┐
-│  @xemaya/a2h-mcp (this package)  │
+│  @a2hmarket/a2h-mcp (this package)  │
 │  ├── tools: send_message, …      │
 │  ├── ~/.a2h/credentials.json     │
 │  └── SSE subscriber → notify     │

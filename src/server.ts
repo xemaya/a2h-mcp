@@ -61,7 +61,7 @@ function registerUnauthenticated(server: Server): void {
             type: "text",
             text:
               "Not logged in. Run in a separate terminal:\n" +
-              "  npx -y @xemaya/a2h-mcp-login\n" +
+              "  npx -y @a2hmarket/a2h-mcp-login\n" +
               "Then restart this MCP server (or the host app).",
           },
         ],
