@@ -83,9 +83,47 @@ describe("config.loadCredentials", () => {
     expect(loadCredentials()).toBeNull();
   });
 
-  it("returns null when required fields are missing", () => {
-    writeFileSync(credPath(), JSON.stringify({ token: "x" }));
+  it("accepts a token-only JSON (other fields optional)", () => {
+    mkdirSync(tmp, { recursive: true });
+    writeFileSync(credPath(), JSON.stringify({ token: "a2h_pat_only" }));
+    const c = loadCredentials();
+    expect(c).not.toBeNull();
+    expect(c?.token).toBe("a2h_pat_only");
+    expect(c?.agentId).toBeUndefined();
+    expect(c?.tokenName).toBeUndefined();
+    expect(c?.createdAt).toBeUndefined();
+  });
+
+  it("accepts a bare PAT string (no JSON wrapping)", () => {
+    mkdirSync(tmp, { recursive: true });
+    writeFileSync(credPath(), "a2h_pat_bare\n");
+    const c = loadCredentials();
+    expect(c?.token).toBe("a2h_pat_bare");
+  });
+
+  it("returns null when token field is missing or non-string", () => {
+    mkdirSync(tmp, { recursive: true });
+    writeFileSync(credPath(), JSON.stringify({ agentId: "ag_1" }));
     expect(loadCredentials()).toBeNull();
+    writeFileSync(credPath(), JSON.stringify({ token: 42 }));
+    expect(loadCredentials()).toBeNull();
+  });
+
+  it("prefers A2H_PAT env over the credentials file", () => {
+    mkdirSync(tmp, { recursive: true });
+    writeFileSync(
+      credPath(),
+      JSON.stringify({ token: "a2h_pat_from_file", agentId: "ag_x" }),
+    );
+    process.env.A2H_PAT = "a2h_pat_from_env";
+    try {
+      const c = loadCredentials();
+      expect(c?.token).toBe("a2h_pat_from_env");
+      // env path returns just the token, no metadata
+      expect(c?.agentId).toBeUndefined();
+    } finally {
+      delete process.env.A2H_PAT;
+    }
   });
 });
 

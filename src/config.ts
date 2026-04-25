@@ -4,9 +4,14 @@ import { join } from "node:path";
 
 export interface Credentials {
   token: string;
-  agentId: string;
-  tokenName: string;
-  createdAt: string;
+  /**
+   * 仅 metadata，鉴权层（concierge AgentPatAuthFilter）不读这些字段——
+   * 它从 PAT 反查数据库拿到真实 owner_user_id / agent_id / token_id。
+   * 这里保留 optional 字段是给本地 `get_user_info` tool 显示用，缺了就空。
+   */
+  agentId?: string;
+  tokenName?: string;
+  createdAt?: string;
 }
 
 /**
@@ -37,22 +42,51 @@ export function credPath(): string {
   return join(credDir(), "credentials.json");
 }
 
+/**
+ * Load credentials from (in order):
+ *   1. `A2H_PAT` env var — for hosts that can pass env in MCP config (most
+ *      modern hosts: Claude Desktop, MaxClaw via mcporter, etc.). Lets users
+ *      paste just the token from /authcode and skip the credentials file.
+ *   2. `~/.a2h/credentials.json` — JSON object whose only required field is
+ *      `token`. agentId/tokenName/createdAt are optional metadata.
+ *   3. `~/.a2h/credentials.json` containing a bare `a2h_pat_...` string
+ *      (no JSON braces) — same convenience path for `echo TOKEN > file` users.
+ */
 export function loadCredentials(): Credentials | null {
+  const envToken = process.env.A2H_PAT;
+  if (typeof envToken === "string" && envToken.startsWith("a2h_pat_")) {
+    return { token: envToken.trim() };
+  }
+
   const path = credPath();
   if (!existsSync(path)) {
     return null;
   }
+  let text: string;
   try {
-    const text = readFileSync(path, "utf-8");
+    text = readFileSync(path, "utf-8").trim();
+  } catch {
+    return null;
+  }
+
+  // Bare-token form: file contents are just the PAT, no JSON.
+  if (text.startsWith("a2h_pat_") && !text.startsWith("{")) {
+    return { token: text };
+  }
+
+  try {
     const parsed = JSON.parse(text);
-    if (
-      typeof parsed?.token !== "string" ||
-      typeof parsed?.agentId !== "string" ||
-      typeof parsed?.tokenName !== "string"
-    ) {
+    if (typeof parsed?.token !== "string") {
       return null;
     }
-    return parsed as Credentials;
+    return {
+      token: parsed.token,
+      agentId: typeof parsed.agentId === "string" ? parsed.agentId : undefined,
+      tokenName:
+        typeof parsed.tokenName === "string" ? parsed.tokenName : undefined,
+      createdAt:
+        typeof parsed.createdAt === "string" ? parsed.createdAt : undefined,
+    };
   } catch {
     return null;
   }

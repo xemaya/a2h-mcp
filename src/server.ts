@@ -13,7 +13,7 @@ import { getUserInfoTool } from "./tools/get-user-info.js";
 import { checkInboxTool } from "./tools/check-inbox.js";
 
 const SERVER_NAME = "a2h-mcp";
-const SERVER_VERSION = "0.1.2";
+const SERVER_VERSION = "0.1.3";
 
 /**
  * SSE 长连只对"长生命周期 MCP host"稳（CC / Cursor 本地进程）。MaxClaw / 其他
@@ -70,9 +70,13 @@ function registerUnauthenticated(server: Server): void {
           {
             type: "text",
             text:
-              "Not logged in. Run in a separate terminal:\n" +
-              "  npx -y @a2hmarket/a2h-mcp-login\n" +
-              "Then restart this MCP server (or the host app).",
+              "Not logged in. Two options:\n\n" +
+              "1. Open https://a2hmarket.ai/authcode?code=SKILL-<random> in a browser, " +
+              "authorize, copy the token shown on the success page, and add to your MCP server config:\n" +
+              "    env: { \"A2H_PAT\": \"a2h_pat_...\" }\n" +
+              "   Then reload the MCP server.\n\n" +
+              "2. Or run in a terminal: `npx -y -p @a2hmarket/a2h-mcp a2h-mcp-login` " +
+              "(prints the URL, polls until you authorize, writes ~/.a2h/credentials.json).",
           },
         ],
       };
