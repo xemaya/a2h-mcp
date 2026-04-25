@@ -11,9 +11,10 @@ import { EventStreamClient } from "./event-stream.js";
 import { sendMessageTool } from "./tools/send-message.js";
 import { getUserInfoTool } from "./tools/get-user-info.js";
 import { checkInboxTool } from "./tools/check-inbox.js";
+import { uploadAttachmentTool } from "./tools/upload-attachment.js";
 
 const SERVER_NAME = "a2h-mcp";
-const SERVER_VERSION = "0.1.3";
+const SERVER_VERSION = "0.1.4";
 
 /**
  * SSE 长连只对"长生命周期 MCP host"稳（CC / Cursor 本地进程）。MaxClaw / 其他
@@ -96,6 +97,7 @@ function registerAuthenticated(
     tools: [
       sendMessageTool.descriptor,
       checkInboxTool.descriptor,
+      uploadAttachmentTool.descriptor,
       getUserInfoTool.descriptor,
     ],
   }));
@@ -109,6 +111,9 @@ function registerAuthenticated(
     }
     if (name === checkInboxTool.name) {
       return await checkInboxTool.handler(args, ctx);
+    }
+    if (name === uploadAttachmentTool.name) {
+      return await uploadAttachmentTool.handler(args, ctx);
     }
     if (name === getUserInfoTool.name) {
       return await getUserInfoTool.handler(args, ctx);

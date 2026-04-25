@@ -29,7 +29,8 @@ describe("sendMessageTool", () => {
       { content: "hello ai" },
       { api: api as never, creds },
     );
-    expect(api.sendMessage).toHaveBeenCalledWith("hello ai");
+    // attachments is now an optional second arg; absent → undefined
+    expect(api.sendMessage).toHaveBeenCalledWith("hello ai", undefined);
     expect(out.content).toHaveLength(1);
     expect(out.content[0].type).toBe("text");
     const parsed = JSON.parse(out.content[0].text);
